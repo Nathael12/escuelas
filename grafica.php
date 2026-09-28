@@ -1,278 +1,821 @@
 <?php
-    include("common/conexion.php");
 
-    $totales = $conn->query("
-        SELECT 
-            SUM(`niñas`) as total_ninas,
-            SUM(`niños`) as total_ninos,
-            SUM(maestras) as total_maestras,
-            SUM(maestros) as total_maestros
-        FROM escuelas
-    ")->fetch_assoc();
+require_once("common/auth.php");
+include("common/conexion.php");
 
-    $niveles = $conn->query("
-        SELECT nivel_escolar, COUNT(*) as cantidad
-        FROM escuelas
-        GROUP BY nivel_escolar
-    ");
-    $labels_niveles = [];
-    $data_niveles = [];
-    while($row = $niveles->fetch_assoc()){
-        $labels_niveles[] = $row['nivel_escolar'];
-        $data_niveles[] = $row['cantidad'];
-    }
+/* =========================================================
+   DATOS GENERALES
+   ========================================================= */
 
-    $alumnos_nivel = $conn->query("
-        SELECT 
-            nivel_escolar,
-            SUM(niñas) as total_ninas,
-            SUM(niños) as total_ninos
-        FROM escuelas 
-        GROUP BY nivel_escolar
-    ");
-    $labels_alumnos_nivel = [];
-    $data_ninas_nivel = [];
-    $data_ninos_nivel = [];
-    while($row = $alumnos_nivel->fetch_assoc()){
-        $labels_alumnos_nivel[] = $row['nivel_escolar'];
-        $data_ninas_nivel[] = $row['total_ninas'];
-        $data_ninos_nivel[] = $row['total_ninos'];
-    }
+$sqlTotal = "SELECT 
+                COUNT(*) AS total_escuelas,
+                COALESCE(SUM(niñas), 0) AS total_niñas,
+                COALESCE(SUM(niños), 0) AS total_niños,
+                COALESCE(SUM(maestras), 0) AS total_maestras,
+                COALESCE(SUM(maestros), 0) AS total_maestros
+             FROM escuelas";
 
-    $docentes_nivel = $conn->query("
-        SELECT 
-            nivel_escolar,
-            SUM(maestras) as total_maestras,
-            SUM(maestros) as total_maestros
-        FROM escuelas 
-        GROUP BY nivel_escolar
-    ");
-    $labels_docentes_nivel = [];
-    $data_maestras_nivel = [];
-    $data_maestros_nivel = [];
-    while($row = $docentes_nivel->fetch_assoc()){
-        $labels_docentes_nivel[] = $row['nivel_escolar'];
-        $data_maestras_nivel[] = $row['total_maestras'];
-        $data_maestros_nivel[] = $row['total_maestros'];
-    }
+$resultTotal = $conn->query($sqlTotal);
+$totales = $resultTotal->fetch_assoc();
+
+$totalEscuelas = (int)$totales['total_escuelas'];
+$totalNiñas = (int)$totales['total_niñas'];
+$totalNiños = (int)$totales['total_niños'];
+$totalMaestras = (int)$totales['total_maestras'];
+$totalMaestros = (int)$totales['total_maestros'];
+
+$totalAlumnos = $totalNiñas + $totalNiños;
+$totalDocentes = $totalMaestras + $totalMaestros;
+
+
+/* =========================================================
+   ESCUELAS POR NIVEL
+   ========================================================= */
+
+$sqlNivel = "SELECT 
+                nivel_escolar,
+                COUNT(*) AS cantidad
+             FROM escuelas
+             GROUP BY nivel_escolar
+             ORDER BY nivel_escolar";
+
+$resultNivel = $conn->query($sqlNivel);
+
+$niveles = [];
+$cantidadNiveles = [];
+
+while ($fila = $resultNivel->fetch_assoc()) {
+    $niveles[] = $fila['nivel_escolar'];
+    $cantidadNiveles[] = (int)$fila['cantidad'];
+}
+
+
+/* =========================================================
+   ALUMNOS POR NIVEL
+   ========================================================= */
+
+$sqlAlumnosNivel = "SELECT 
+                        nivel_escolar,
+                        COALESCE(SUM(niñas), 0) AS niñas,
+                        COALESCE(SUM(niños), 0) AS niños
+                    FROM escuelas
+                    GROUP BY nivel_escolar
+                    ORDER BY nivel_escolar";
+
+$resultAlumnosNivel = $conn->query($sqlAlumnosNivel);
+
+$nivelesAlumnos = [];
+$niñasNivel = [];
+$niñosNivel = [];
+
+while ($fila = $resultAlumnosNivel->fetch_assoc()) {
+    $nivelesAlumnos[] = $fila['nivel_escolar'];
+    $niñasNivel[] = (int)$fila['niñas'];
+    $niñosNivel[] = (int)$fila['niños'];
+}
+
+
+/* =========================================================
+   DOCENTES POR NIVEL
+   ========================================================= */
+
+$sqlDocentesNivel = "SELECT 
+                        nivel_escolar,
+                        COALESCE(SUM(maestras), 0) AS maestras,
+                        COALESCE(SUM(maestros), 0) AS maestros
+                     FROM escuelas
+                     GROUP BY nivel_escolar
+                     ORDER BY nivel_escolar";
+
+$resultDocentesNivel = $conn->query($sqlDocentesNivel);
+
+$nivelesDocentes = [];
+$maestrasNivel = [];
+$maestrosNivel = [];
+
+while ($fila = $resultDocentesNivel->fetch_assoc()) {
+    $nivelesDocentes[] = $fila['nivel_escolar'];
+    $maestrasNivel[] = (int)$fila['maestras'];
+    $maestrosNivel[] = (int)$fila['maestros'];
+}
+
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 Panel Estadísticas Escolares</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    
-    <style>
-        .grafica-container {
-            height: 280px !important;
-            width: 100% !important;
-            position: relative;
-        }
-        .card-grafica {
-            height: 360px;
-            margin-bottom: 1.5rem;
-        }
-        .card-grafica h5 {
-            margin-bottom: 1rem;
-            color: #495057;
-        }
-        .btn-volver {
-            margin-top: 2rem;
-        }
-    </style>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Estadísticas - Registro Escolar</title>
+
+    <link rel="stylesheet"
+          href="css/bootstrap.min.css">
+
+    <link rel="stylesheet"
+          href="css/estilos.css">
+
 </head>
-<body class="bg-light">
 
-<div class="container mt-5">
-    <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-primary mb-3">📊 Panel de Estadísticas</h1>
-        <p class="lead text-muted">Visualización completa de datos escolares</p>
+<body>
+
+<?php include("common/navbar.php"); ?>
+
+
+<main class="container-fluid py-4">
+
+    <div class="dashboard-container">
+
+        <!-- =====================================================
+             ENCABEZADO
+             ===================================================== -->
+
+        <div class="mb-4">
+
+            <h1 class="titulo-pagina">
+                <i data-lucide="bar-chart-3"></i>
+                Estadísticas escolares
+            </h1>
+
+            <p class="subtitulo-pagina mb-0">
+                Resumen general de la información registrada en el sistema.
+            </p>
+
+        </div>
+
+
+        <!-- =====================================================
+             TARJETAS DE RESUMEN
+             ===================================================== -->
+
+        <div class="row g-4 mb-4">
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card card-resumen shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <p class="texto-resumen">
+                                    Escuelas
+                                </p>
+
+                                <p class="numero-resumen">
+                                    <?php echo $totalEscuelas; ?>
+                                </p>
+
+                            </div>
+
+                            <i data-lucide="school"
+                               class="icono-resumen text-primary"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card card-resumen shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <p class="texto-resumen">
+                                    Alumnos
+                                </p>
+
+                                <p class="numero-resumen">
+                                    <?php echo $totalAlumnos; ?>
+                                </p>
+
+                            </div>
+
+                            <i data-lucide="users"
+                               class="icono-resumen text-success"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card card-resumen shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <p class="texto-resumen">
+                                    Docentes
+                                </p>
+
+                                <p class="numero-resumen">
+                                    <?php echo $totalDocentes; ?>
+                                </p>
+
+                            </div>
+
+                            <i data-lucide="graduation-cap"
+                               class="icono-resumen text-warning"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card card-resumen shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center">
+
+                            <div>
+
+                                <p class="texto-resumen">
+                                    Niñas y niños
+                                </p>
+
+                                <p class="numero-resumen">
+                                    <?php echo $totalNiñas + $totalNiños; ?>
+                                </p>
+
+                            </div>
+
+                            <i data-lucide="baby"
+                               class="icono-resumen text-info"></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             GRÁFICAS
+             ===================================================== -->
+
+        <div class="row g-4">
+
+
+            <!-- TOTAL DE ALUMNOS -->
+
+            <div class="col-12 col-lg-6">
+
+                <div class="card card-panel shadow-sm">
+
+                    <div class="card-header p-3">
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <i data-lucide="users"></i>
+
+                            <span>
+                                Total de alumnos
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="grafica-container">
+
+                            <canvas id="graficaAlumnos"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TOTAL DE DOCENTES -->
+
+            <div class="col-12 col-lg-6">
+
+                <div class="card card-panel shadow-sm">
+
+                    <div class="card-header p-3">
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <i data-lucide="graduation-cap"></i>
+
+                            <span>
+                                Total de docentes
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="grafica-container">
+
+                            <canvas id="graficaDocentes"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ESCUELAS POR NIVEL -->
+
+            <div class="col-12 col-lg-6">
+
+                <div class="card card-panel shadow-sm">
+
+                    <div class="card-header p-3">
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <i data-lucide="school"></i>
+
+                            <span>
+                                Escuelas por nivel escolar
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="grafica-container">
+
+                            <canvas id="graficaNiveles"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ALUMNOS POR NIVEL -->
+
+            <div class="col-12 col-lg-6">
+
+                <div class="card card-panel shadow-sm">
+
+                    <div class="card-header p-3">
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <i data-lucide="bar-chart-3"></i>
+
+                            <span>
+                                Alumnos por nivel escolar
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="grafica-container">
+
+                            <canvas id="graficaAlumnosNivel"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- DOCENTES POR NIVEL -->
+
+            <div class="col-12">
+
+                <div class="card card-panel shadow-sm">
+
+                    <div class="card-header p-3">
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <i data-lucide="bar-chart-horizontal"></i>
+
+                            <span>
+                                Docentes por nivel escolar
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="grafica-container grafica-grande">
+
+                            <canvas id="graficaDocentesNivel"></canvas>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card card-grafica shadow-sm p-3 bg-white">
-                <h5 class="text-center mb-3">👧👦 Total Alumnos</h5>
-                <div class="grafica-container">
-                    <canvas id="graficaAlumnos"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card card-grafica shadow-sm p-3 bg-white">
-                <h5 class="text-center mb-3">👩‍🏫👨‍🏫 Total Docentes</h5>
-                <div class="grafica-container">
-                    <canvas id="graficaDocentes"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card card-grafica shadow-sm p-3 bg-white">
-                <h5 class="text-center mb-3">🏫 Escuelas por Nivel</h5>
-                <div class="grafica-container">
-                    <canvas id="graficaNiveles"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+</main>
 
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card card-grafica shadow-sm p-3 bg-white">
-                <h5 class="text-center mb-3">👧👦 Alumnos por Nivel Escolar</h5>
-                <div class="grafica-container">
-                    <canvas id="graficaAlumnosNivel"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="card card-grafica shadow-sm p-3 bg-white">
-                <h5 class="text-center mb-3">👩‍🏫👨‍🏫 Docentes por Nivel Escolar</h5>
-                <div class="grafica-container">
-                    <canvas id="graficaDocentesNivel"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <div class="text-center">
-        <a href="index.php" class="btn btn-secondary btn-lg btn-volver shadow-sm">
-            ⬅️ Volver al Panel Principal
-        </a>
-    </div>
-</div>
+<!-- =========================================================
+     BOOTSTRAP
+     ========================================================= -->
+
+<script src="css/bootstrap.min.js"></script>
+
+
+<!-- =========================================================
+     CHART.JS
+     ========================================================= -->
+
+<script src="librerias/chart-js/node_modules/chart.js/dist/chart.umd.js"></script>
+
+
+<!-- =========================================================
+     LUCIDE
+     ========================================================= -->
+
+<script src="librerias/lucide/node_modules/lucide/dist/umd/lucide.min.js"></script>
+
 
 <script>
 
-const configBase = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: {
-            position: 'top',
-        }
+document.addEventListener("DOMContentLoaded", function () {
+
+    /* =====================================================
+       ICONOS
+       ===================================================== */
+
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
     }
-};
 
-new Chart(document.getElementById('graficaAlumnos'), {
-    type: 'bar',
-    data: {
-        labels: ['👧 Niñas', '👦 Niños'],
-        datasets: [{
-            label: 'Total General',
-            data: [<?= $totales['total_ninas'] ?? 0 ?>, <?= $totales['total_ninos'] ?? 0 ?>],
-            backgroundColor: ['#ff6384', '#36a2eb'],
-            borderRadius: 8,
-            borderSkipped: false
-        }]
-    },
-    options: configBase
-});
 
-new Chart(document.getElementById('graficaDocentes'), {
-    type: 'bar',
-    data: {
-        labels: ['👩‍🏫 Maestras', '👨‍🏫 Maestros'],
-        datasets: [{
-            label: 'Total General',
-            data: [<?= $totales['total_maestras'] ?? 0 ?>, <?= $totales['total_maestros'] ?? 0 ?>],
-            backgroundColor: ['#8e44ad', '#2ecc71'],
-            borderRadius: 8,
-            borderSkipped: false
-        }]
-    },
-    options: configBase
-});
+    /* =====================================================
+       GRÁFICA TOTAL DE ALUMNOS
+       ===================================================== */
 
-new Chart(document.getElementById('graficaNiveles'), {
-    type: 'doughnut',
-    data: {
-        labels: <?= json_encode($labels_niveles) ?>,
-        datasets: [{
-            data: <?= json_encode($data_niveles) ?>,
-            backgroundColor: [
-                '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', 
-                '#9966ff', '#e67e22', '#f7464a', '#00a0b0'
-            ],
-            borderWidth: 2,
-            borderColor: '#fff'
-        }]
-    },
-    options: configBase
-});
+    new Chart(
+        document.getElementById("graficaAlumnos"),
+        {
+            type: "bar",
 
-new Chart(document.getElementById('graficaAlumnosNivel'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode($labels_alumnos_nivel) ?>,
-        datasets: [
-            {
-                label: '👧 Niñas',
-                data: <?= json_encode($data_ninas_nivel) ?>,
-                backgroundColor: '#ff6384',
-                borderRadius: 4
+            data: {
+
+                labels: ["Niñas", "Niños"],
+
+                datasets: [
+                    {
+                        label: "Alumnos",
+
+                        data: [
+                            <?php echo $totalNiñas; ?>,
+                            <?php echo $totalNiños; ?>
+                        ],
+
+                        backgroundColor: [
+                            "#e83e8c",
+                            "#0d6efd"
+                        ],
+
+                        borderRadius: 8
+                    }
+                ]
+
             },
-            {
-                label: '👦 Niños', 
-                data: <?= json_encode($data_ninos_nivel) ?>,
-                backgroundColor: '#36a2eb',
-                borderRadius: 4
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+                        display: false
+                    }
+
+                },
+
+                scales: {
+
+                    y: {
+                        beginAtZero: true
+                    }
+
+                }
+
             }
-        ]
-    },
-    options: {
-        ...configBase,
-        scales: {
-            x: { stacked: true },
-            y: { 
-                stacked: true,
-                beginAtZero: true,
-                title: { display: true, text: 'Cantidad de Alumnos' }
-            }
+
         }
-    }
+    );
+
+
+    /* =====================================================
+       GRÁFICA TOTAL DE DOCENTES
+       ===================================================== */
+
+    new Chart(
+        document.getElementById("graficaDocentes"),
+        {
+            type: "bar",
+
+            data: {
+
+                labels: ["Maestras", "Maestros"],
+
+                datasets: [
+                    {
+                        label: "Docentes",
+
+                        data: [
+                            <?php echo $totalMaestras; ?>,
+                            <?php echo $totalMaestros; ?>
+                        ],
+
+                        backgroundColor: [
+                            "#6f42c1",
+                            "#20c997"
+                        ],
+
+                        borderRadius: 8
+                    }
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+                        display: false
+                    }
+
+                },
+
+                scales: {
+
+                    y: {
+                        beginAtZero: true
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       ESCUELAS POR NIVEL
+       ===================================================== */
+
+    new Chart(
+        document.getElementById("graficaNiveles"),
+        {
+            type: "doughnut",
+
+            data: {
+
+                labels: <?php echo json_encode($niveles); ?>,
+
+                datasets: [
+                    {
+                        data: <?php echo json_encode($cantidadNiveles); ?>,
+
+                        backgroundColor: [
+                            "#0d6efd",
+                            "#198754",
+                            "#ffc107",
+                            "#dc3545",
+                            "#6f42c1",
+                            "#20c997",
+                            "#fd7e14"
+                        ]
+                    }
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                plugins: {
+
+                    legend: {
+                        position: "bottom"
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       ALUMNOS POR NIVEL
+       ===================================================== */
+
+    new Chart(
+        document.getElementById("graficaAlumnosNivel"),
+        {
+            type: "bar",
+
+            data: {
+
+                labels: <?php echo json_encode($nivelesAlumnos); ?>,
+
+                datasets: [
+
+                    {
+                        label: "Niñas",
+
+                        data: <?php echo json_encode($niñasNivel); ?>,
+
+                        backgroundColor: "#e83e8c",
+
+                        borderRadius: 6
+                    },
+
+                    {
+                        label: "Niños",
+
+                        data: <?php echo json_encode($niñosNivel); ?>,
+
+                        backgroundColor: "#0d6efd",
+
+                        borderRadius: 6
+                    }
+
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    x: {
+                        stacked: true
+                    },
+
+                    y: {
+
+                        stacked: true,
+
+                        beginAtZero: true
+
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       DOCENTES POR NIVEL
+       ===================================================== */
+
+    new Chart(
+        document.getElementById("graficaDocentesNivel"),
+        {
+            type: "bar",
+
+            data: {
+
+                labels: <?php echo json_encode($nivelesDocentes); ?>,
+
+                datasets: [
+
+                    {
+                        label: "Maestras",
+
+                        data: <?php echo json_encode($maestrasNivel); ?>,
+
+                        backgroundColor: "#6f42c1",
+
+                        borderRadius: 6
+                    },
+
+                    {
+                        label: "Maestros",
+
+                        data: <?php echo json_encode($maestrosNivel); ?>,
+
+                        backgroundColor: "#20c997",
+
+                        borderRadius: 6
+                    }
+
+                ]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                maintainAspectRatio: false,
+
+                scales: {
+
+                    x: {
+                        stacked: true
+                    },
+
+                    y: {
+
+                        stacked: true,
+
+                        beginAtZero: true
+
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
 });
 
-new Chart(document.getElementById('graficaDocentesNivel'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode($labels_docentes_nivel) ?>,
-        datasets: [
-            {
-                label: '👩‍🏫 Maestras',
-                data: <?= json_encode($data_maestras_nivel) ?>,
-                backgroundColor: '#8e44ad',
-                borderRadius: 4
-            },
-            {
-                label: '👨‍🏫 Maestros',
-                data: <?= json_encode($data_maestros_nivel) ?>,
-                backgroundColor: '#2ecc71',
-                borderRadius: 4
-            }
-        ]
-    },
-    options: {
-        ...configBase,
-        scales: {
-            x: { stacked: true },
-            y: { 
-                stacked: true,
-                beginAtZero: true,
-                title: { display: true, text: 'Cantidad de Docentes' }
-            }
-        }
-    }
-});
 </script>
 
 </body>
+
 </html>

@@ -1,0 +1,306 @@
+/* =========================================================
+   ESTILOS GENERALES
+   ========================================================= */
+
+body {
+    background-color: #f5f7fa;
+    color: #212529;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+
+.navbar-escolar {
+    background: linear-gradient(135deg, #173b67, #24558c);
+    min-height: 68px;
+}
+
+.navbar-escolar .navbar-brand {
+    font-size: 1.2rem;
+    letter-spacing: 0.2px;
+}
+
+.navbar-escolar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.65rem 0.9rem !important;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.navbar-escolar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.navbar-escolar .navbar-text {
+    color: #ffffff;
+}
+
+.nav-icon {
+    width: 17px;
+    height: 17px;
+}
+
+
+/* =========================================================
+   CONTENEDOR PRINCIPAL
+   ========================================================= */
+
+.dashboard-container {
+    max-width: 1400px;
+    margin: auto;
+}
+
+.titulo-pagina {
+    color: #173b67;
+    font-weight: 700;
+}
+
+.subtitulo-pagina {
+    color: #6c757d;
+}
+
+
+/* =========================================================
+   TARJETAS DE RESUMEN
+   ========================================================= */
+
+.card-resumen {
+    border: none;
+    border-radius: 14px;
+    transition: transform 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.card-resumen:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.10) !important;
+}
+
+.icono-resumen {
+    width: 42px;
+    height: 42px;
+}
+
+.numero-resumen {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #173b67;
+}
+
+.texto-resumen {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+
+/* =========================================================
+   PANELES
+   ========================================================= */
+
+.card-panel {
+    border: none;
+    border-radius: 14px;
+    height: 100%;
+}
+
+.card-panel .card-header {
+    background-color: transparent;
+    border-bottom: 1px solid #eeeeee;
+    font-weight: 600;
+    color: #173b67;
+}
+
+
+/* =========================================================
+   BOTONES DE ACCIONES
+   ========================================================= */
+
+.btn-accion {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 9px;
+}
+
+
+/* =========================================================
+   GRÁFICAS
+   ========================================================= */
+
+.grafica-container {
+    height: 280px;
+    width: 100%;
+    position: relative;
+}
+
+.grafica-grande {
+    height: 350px;
+}
+
+.card-panel .card-body {
+    min-height: 300px;
+}
+
+
+/* =========================================================
+   FORMULARIOS
+   ========================================================= */
+
+.form-control,
+.form-select {
+    border-radius: 9px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #24558c;
+    box-shadow: 0 0 0 0.2rem rgba(36, 85, 140, 0.15);
+}
+
+.form-label {
+    color: #343a40;
+}
+
+
+/* =========================================================
+   TABLAS
+   ========================================================= */
+
+.table {
+    vertical-align: middle;
+}
+
+.table thead th {
+    white-space: nowrap;
+}
+
+.table tbody td {
+    vertical-align: middle;
+}
+
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+}
+
+.login-card {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.login-header {
+    background: linear-gradient(135deg, #173b67, #24558c);
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.login-icon {
+    width: 55px;
+    height: 55px;
+    margin-bottom: 15px;
+}
+
+.login-body {
+    padding: 30px;
+}
+
+.login-body .form-control {
+    min-height: 46px;
+    border-radius: 9px;
+}
+
+.btn-login {
+    min-height: 48px;
+    border-radius: 9px;
+    font-weight: 600;
+}
+
+.login-footer {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-top: 20px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 992px) {
+
+    .navbar-escolar .nav-link {
+        margin-top: 3px;
+        margin-bottom: 3px;
+    }
+
+    .grafica-grande {
+        height: 320px;
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .navbar-escolar .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .numero-resumen {
+        font-size: 1.6rem;
+    }
+
+    .grafica-container {
+        height: 260px;
+    }
+
+    .grafica-grande {
+        height: 300px;
+    }
+
+    .card-panel .card-body {
+        min-height: 280px;
+    }
+
+}
+
+@media (max-width: 576px) {
+
+    .dashboard-container {
+        width: 100%;
+    }
+
+    .titulo-pagina {
+        font-size: 1.5rem;
+    }
+
+    .subtitulo-pagina {
+        font-size: 0.9rem;
+    }
+
+    .grafica-container {
+        height: 240px;
+    }
+
+    .grafica-grande {
+        height: 260px;
+    }
+
+}
