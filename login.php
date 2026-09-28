@@ -272,9 +272,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </div>
 
-<script src="css/bootstrap.min.js"></script>
-
-<script src="librerias/lucide/node_modules/lucide/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
 
 <script>

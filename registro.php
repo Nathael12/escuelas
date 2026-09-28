@@ -444,11 +444,10 @@ if ($total_resultado) {
 
 </main>
 
-<script src="css/bootstrap.min.js"></script>
-<script src="librerias/datatables/datatables.min.js"></script>
-<script src="librerias/sweetalert2/sweetalert2.all.min.js"></script>
-<script src="librerias/lucide/node_modules/lucide/dist/umd/lucide.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
 <script>
 

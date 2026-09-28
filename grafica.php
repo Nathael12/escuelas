@@ -471,26 +471,9 @@ while ($fila = $resultDocentesNivel->fetch_assoc()) {
 
 </main>
 
-
-<!-- =========================================================
-     BOOTSTRAP
-     ========================================================= -->
-
-<script src="css/bootstrap.min.js"></script>
-
-
-<!-- =========================================================
-     CHART.JS
-     ========================================================= -->
-
-<script src="librerias/chart-js/node_modules/chart.js/dist/chart.umd.js"></script>
-
-
-<!-- =========================================================
-     LUCIDE
-     ========================================================= -->
-
-<script src="librerias/lucide/node_modules/lucide/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 
 
 <script>
